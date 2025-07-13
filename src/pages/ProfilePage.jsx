@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "../components/Navbar";
+import {useMyContext} from "../context/MyContext";
 
 const ProfilePage = () => {
+    const {setCount}=useMyContext();
     const [products, setProducts] = useState([]);
-
+    const [editProductId, setEditProductId] =useState("");
+    const [updatedPrice, setUpdatedPrice] = useState(null); 
     const getData = async () => {
         try {
             const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/products`, {
@@ -56,7 +59,33 @@ const ProfilePage = () => {
             alert(`Cannot create product: ${err.message}`);
         }
     };
+const handleEditProduct=async (productId)=>{
+    try{
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/products/${productId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+            price: updatedPrice,
+        }),
+        headers:{
+            "content-type": "application/json",
+        },
+        
+});
 
+if (res.status === 200){
+    alert("Product updated");
+    setEditProductId("");
+    getData();
+}else{
+    const result= await res.json();
+    alert(`Enter while updating product:",${result.message}`)
+}
+    }catch(err){
+        alert("Cannot update product:" ,err.message);
+        console.warn("Cannot update product -->", err.message);
+        
+    }
+};
     return (
         <div>
             <Navbar />
@@ -88,7 +117,46 @@ const ProfilePage = () => {
                     return (
                         <div key={elem._id} className="p-4 rounded-lg border-1">
                             <p>{elem.title}</p>
-                            <p>{elem.price}</p>
+                            {elem._id === editProductId ? (
+                                <>
+                                    <input
+                                        value={updatedPrice}
+                                        onChange={(e) => setUpdatedPrice(e.target.value)}
+                                        className="py-1 px-2 border-1 rounded-md"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            setEditProductId("");
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleEditProduct(elem._id);
+                                        }}
+                                    >
+                                        Update
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p>{elem.price}</p>
+                                    <button
+                                        onClick={() => {
+                                            setEditProductId(elem._id);
+                                            setUpdatedPrice(elem.price);
+                                        }}
+                                        className="py-1 px-2 border-1 rounded-md"
+                                    >
+                                        Edit
+                                            
+                                    </button>
+                                    <button onClick={()=>{
+                                       setCount((prev)=>prev+1);
+                                    }} className="py-1 px-2 border-1 rounded-md">++</button>
+                                </>
+                            )}
                         </div>
                     );
                 })}
